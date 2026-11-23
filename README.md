@@ -3,8 +3,8 @@
 
 A custom, medium-interaction cybersecurity honeypot built in Python with **FastAPI**. Instead of immediately rejecting scanners with generic `404` errors, this project mimics a misconfigured internal **LLM Inference Gateway** with an interactive web portal, leaked honeytokens, and stateful post-exploitation traps to capture multi-stage attacker behavior.
 
-- **Live Demo & Decoy Portal:** https://onrender.com
-- **Live Attack Telemetry Dashboard:** https://onrender.comdashboard
+- **Live Demo & Decoy Portal:** [https://onrender.comdashboard](https://ai-honeypot-telemetry.onrender.com/)
+- **Live Attack Telemetry Dashboard:** [https://onrender.comdashboard](https://ai-honeypot-telemetry.onrender.com/)
 
 ---
 
