@@ -45,3 +45,17 @@ python analyze.py
 - **Day 2 — Middleware Wiretap & Stateful Decoys:** Implemented FastAPI HTTP middleware to intercept all traffic (including `404` probes), compute SHA-256 hashes of incoming payloads, and tag attack patterns. Built the `/.env` -> `/admin/login` -> `/admin/exec-diag` breadcrumb trail and verified the 3-stage exploit chain locally.
 - **Day 3 — Threat-Intel Enrichment, Web UI & Cloud Deployment:** Added async GeoIP/ISP lookup with caching (`httpx`), built `analyze.py` for offline log triage, upgraded `/` and `/dashboard` into a full interactive web portal + SOC telemetry view, and deployed to Render.
 
+# CorpAI Medium-Interaction Honeypot & Covert Attack Telemetry
+
+A custom, medium-interaction cybersecurity honeypot built in Python with **FastAPI**. Instead of tipping off attackers with an obvious telemetry page or immediately rejecting scanners with `404` responses, this application mimics a misconfigured internal **LLM Inference Gateway** with interactive bait controls and a **covert operator command** (`telemetry --show`) that unlocks live intrusion telemetry directly inside the decoy console.
+
+- **Live Demo & Decoy Portal:** https://ai-honeypot-telemetry.onrender.com/
+
+---
+
+## How to Test the Demo (For Hack Club Reviewers)
+
+1. **Act as an Attacker:** Open the [Live Demo](https://ai-honeypot-telemetry.onrender.com/), click **View Backup .env** to steal the fake credentials (`sysadmin` / `CorpAI_2026!Prod`), sign into the **Operator Authentication** box, or run fake shell commands like `whoami` in the **Diagnostics** box. Every action is silently logged with GeoIP and payload hashes.
+2. **Unlock Live Telemetry (Covert Operator Mode):** In the **Legacy Config & Diagnostics** input box on the homepage, type the secret command:
+   ```text
+   telemetry --show
