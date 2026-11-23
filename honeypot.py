@@ -3,7 +3,7 @@ import os
 import httpx
 from datetime import datetime, timezone
 from urllib import request
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 IP_CACHE: dict[str, dict] = {}
 LOG_FILE = ...
 
@@ -85,14 +85,93 @@ async def capture_all_traffic(request: Request, call_next):
 
 
 
-@app.get("/")
+
+
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    return {
-        "service": "CorpAI Internal LLM Gateway",
-        "version": "2.4.1-prod",
-        "status": "degraded",
-        "docs": "/admin/login",
-    }
+    """Realistic fake internal AI portal with the interactive bait buttons."""
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>CorpAI Internal LLM Gateway v2.4.1</title>
+        <style>
+            body{ font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 40px; }
+            .container { max-width: 760px; margin: 0 auto; background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 30px; }
+            .badge { background: #f59e0b; color: #0f172a; font-weight: bold; padding: 4px 10px; border-radius: 4px; font-size: 12px; }
+            h1 { margin-top: 12px; font-size: 24px; color: #f8fafc; }
+            p { color: #94a3b8; line-height: 1.6; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+            .card { background: #0f172a; border: 1px solid #334155; padding: 18px; border-radius: 8px; }
+            .card h3 { margin: 0 0 8px 0; font-size: 16px; color: #38bdf8; }
+            button, a.btn { display: inline-block; margin-top: 10px; background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 14px; cursor: pointer; }
+            button:hover, a.btn:hover { background: #1d4ed8; }
+            .danger { background: #dc2626; }
+            .danger:hover { background: #b91c1c; }
+            input { width: 92%; padding: 8px; margin: 6px 0; background: #1e293b; border: 1px solid #475569; color: white; border-radius: 4px; }
+            pre { background: #020617; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px; color: #34d399; display: none; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <span class="badge">STATUS: DEGRADED (DEBUG MODE ENABLED)</span>
+            <h1>CorpAI Internal LLM Inference Gateway</h1>
+            <p>Internal model router for <strong>gpt-4o-internal</strong> and <strong>claude-enterprise</strong>. Unauthorized external access is prohibited.</p>
+
+            <div class="grid">
+                <div class="card">
+                    <h3>1. Operator Authentication</h3>
+                    <input id="user" placeholder="Username (e.g. sysadmin)" />
+                    <input id="pass" type="password" placeholder="Password" />
+                    <button onclick="tryLogin()">Sign In to Console</button>
+                </div>
+
+                <div class="card">
+                    <h3>2. Legacy Config & Diagnostics</h3>
+                    <p style="font-size:13px;">Temporary maintenance links left exposed during v2.4.1 migration:</p>
+                    <a class="btn danger" href="/.env">View Backup .env</a>
+                    <button onclick="runDiag()">Run Node Health Check</button>
+                </div>
+            </div>
+
+            <pre id="output"></pre>
+            <p style="margin-top: 24px; font-size: 12px; border-top: 1px solid #334155; padding-top: 14px;">
+                Security Researcher / Hack Club Reviewer? <a href="/dashboard" style="color:#38bdf8;">View Live Attack Telemetry Dashboard &rarr;</a>
+            </p>
+        </div>
+
+        <script>
+            async function tryLogin() {
+                const res = await fetch('/admin/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        username: document.getElementById('user').value,
+                        password: document.getElementById('pass').value
+                    })
+                });
+                const out = document.getElementById('output');
+                out.style.display = 'block';
+                out.textContent = JSON.stringify(await res.json(), null, 2);
+            }
+
+            async function runDiag() {
+                const res = await fetch('/admin/exec-diag', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({command: 'uname -a'})
+                });
+                const out = document.getElementById('output');
+                out.style.display = 'block';
+                out.textContent = JSON.stringify(await res.json(), null, 2);
+            }
+        </script>
+    </body>
+    </html>"""
+
+
+
 
 
 @app.get("/.env")
@@ -150,9 +229,9 @@ async def fake_rce_diagnostics(request: Request):
     output = fake_outputs.get(cmd.strip(), f"sh: 1: {cmd.split()[0] if cmd else 'cmd'}: completed with exit code 0")
     return {"host": "corp-ai-gw-01", "stdout": output, "stderr": ""}
 
-@app.get("/dashboard")
+@app.get("/dashboard", response_class=HTMLResponse)
 async def live_telemetry_dashboard():
-    """Public read-only summary endpoint so demo reviewers can see live attack stats."""
+    """Visual HTML dashboard displaying live captured attack telemetry."""
     events = []
     if os.path.exists(LOG_FILE):
         with open(LOG_FILE, "r", encoding="utf-8") as f:
@@ -160,25 +239,60 @@ async def live_telemetry_dashboard():
                 if line.strip():
                     events.append(json.loads(line))
 
-    recent = [
-        {
-            "timestamp": e["timestamp"],
-            "src_ip": e["src_ip"],
-            "country": e.get("threat_intel", {}).get("country", "Unknown"),
-            "isp": e.get("threat_intel", {}).get("isp", "Unknown"),
-            "method": e["method"],
-            "path": e["path"],
-            "tags": e["tags"],
-        }
-        for e in events[-15:]
-    ]
+    rows = ""
+    for e in reversed(events[-25:]):
+        intel = e.get("threat_intel", {})
+        loc = f"{intel.get('country', 'Unknown')} ({intel.get('isp', 'Unknown')})"
+        tags = ", ".join(e.get("tags", []))
+        rows += f"""
+        <tr>
+            <td>{e['timestamp'][:19]}Z</td>
+            <td><code>{e['src_ip']}</code></td>
+            <td>{loc}</td>
+            <td><strong>{e['method']}</strong> {e['path']}</td>
+            <td><span class="tag">{tags}</span></td>
+        </tr>
+        """
 
-    return {
-        "honeypot": "CorpAI Internal LLM Gateway",
-        "total_attacks_captured": len(events),
-        "try_decoy_endpoints": ["/.env", "/admin/login", "/admin/exec-diag"],
-        "recent_telemetry": recent,
-    }
+    if not rows:
+        rows = "<tr><td colspan='5' style='text-align:center;color:#94a3b8;'>No attacks logged yet-visit / and click a bait button to test!</td></tr>"
+
+    return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Honeypot Live Attack Telemetry</title>
+            <style>
+                body {{ font-family: system-ui, sans-serif; background: #090d16; color: #e2e8f0; padding: 30px; }}
+                .wrap {{ max-width: 1000px; margin: 0 auto; }}
+                h1 {{ color: #38bdf8; margin-bottom: 6px; }}
+                .stats {{ display: flex; gap: 20px; margin: 20px 0; }}
+                .stat-box {{ background: #1e293b; padding: 16px 24px; border-radius: 8px; border: 1px solid #334155; }}
+                table {{ width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; }}
+                th, td {{ padding: 12px 14px; text-align: left; border-bottom: 1px solid #334155; font-size: 13px; }}
+                th {{ background: #0f172a; color: #94a3b8; text-transform: uppercase; font-size: 11px; }}
+                .tag {{ background: #7f1d1d; color: #fca5a5; padding: 3px 8px; border-radius: 4px; font-size: 11px; }}
+                a {{ color: #38bdf8; }}
+            </style>
+        </head>
+        <body>
+            <div class="wrap">
+                <h1>Live Attack Telemetry Dashboard</h1>
+                <p>Real-time intrusion feed captured by the <strong>CorpAI Medium-Interaction Honeypot</strong>. <a href="/">&larr; Back to Decoy Gateway</a></p>
+                <div class="stats">
+                    <div class="stat-box"><strong>Total Events Captured:</strong> {len(events)}</div>
+                    <div class="stat-box"><strong>Active Decoys:</strong> <code>/.env</code>, <code>/admin/login</code>, <code>/admin/exec-diag</code></div>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>Timestamp (UTC)</th><th>Source IP</th><th>GeoIP / ISP</th><th>Request</th><th>Threat Tags</th></tr>
+                    </thead>
+                    <tbody>{rows}</tbody>
+                </table>
+            </div>
+        </body>
+        </html>
+        """
 
 
 @app.api_route("/{full_path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
